@@ -31,12 +31,12 @@ class _CenterDetailScreenState extends State<CenterDetailScreen> {
   }
 
   void _reload() {
-    _data = () async => {
+    _data = (() async => <String, Object?>{
           'c': await repo.byId(widget.centerId),
           'staff': await repo.staffOf(widget.centerId),
           'equip': await repo.equipmentOf(widget.centerId),
           'tasks': await repo.tasksOf(widget.centerId),
-        }();
+        })();
     setState(() {});
   }
 

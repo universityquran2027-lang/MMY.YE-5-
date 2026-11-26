@@ -28,12 +28,12 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
   }
 
   void _reload() {
-    _data = () async => {
+    _data = (() async => <String, Object?>{
           'p': await repo.byId(widget.staffId),
           'tasks': await repo.tasksOf(widget.staffId),
           'courses': await repo.courses(widget.staffId),
           'exp': await repo.experiences(widget.staffId),
-        }();
+        })();
     setState(() {});
   }
 
