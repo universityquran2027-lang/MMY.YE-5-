@@ -9,7 +9,7 @@ class StaffRepository {
   final String userId;
 
   /// حقول نموذج الإعلامي (وثيقة 6.1: البيانات الشخصية والوظيفية). المركز يُختار من القائمة.
-  static List<FieldSpec> formFields(List<Row> centers) => [
+  static List<FieldSpec> formFields(List<DbRow> centers) => [
         const FieldSpec('full_name', 'الاسم الكامل', required: true),
         const FieldSpec('birth_date', 'تاريخ الميلاد', type: FieldType.date),
         const FieldSpec('phone', 'رقم الجوال', type: FieldType.phone),
@@ -25,7 +25,7 @@ class StaffRepository {
             options: [('active', 'نشط'), ('stopped', 'متوقف')]),
       ];
 
-  Future<List<Row>> list({String q = '', String? centerId, String? status}) {
+  Future<List<DbRow>> list({String q = '', String? centerId, String? status}) {
     final like = '%${q.trim()}%';
     final where = <String>['(s.full_name LIKE ? OR s.specialty LIKE ? OR s.phone LIKE ?)'];
     final args = <Object?>[like, like, like];
@@ -37,7 +37,7 @@ class StaffRepository {
       WHERE ${where.join(' AND ')} ORDER BY s.serial''', args);
   }
 
-  Future<Row?> byId(String id) async {
+  Future<DbRow?> byId(String id) async {
     final r = await app.db.rawQuery('''
       SELECT s.*, c.name AS center_name FROM media_staff s
       LEFT JOIN centers c ON c.id = s.center_id WHERE s.id = ?''', [id]);
@@ -46,7 +46,7 @@ class StaffRepository {
 
   /// أي إعلامي يُضاف (من المركز أو من القسم العام) يُسجَّل مرة واحدة في الجدول نفسه
   /// فيظهر تلقائياً في الموضعين.
-  Future<String> save(Row v, {String? id}) async {
+  Future<String> save(DbRow v, {String? id}) async {
     final t = nowIso();
     if (id == null) {
       final next = (Sqflite.firstIntValue(await app.db.rawQuery('SELECT MAX(serial) FROM media_staff')) ?? 0) + 1;
@@ -69,24 +69,24 @@ class StaffRepository {
   }
 
   // المهام تُسحب تلقائياً من قسم المهام الميدانية (وثيقة 6.1 ثالثاً)
-  Future<List<Row>> tasksOf(String staffId) => app.db.rawQuery('''
+  Future<List<DbRow>> tasksOf(String staffId) => app.db.rawQuery('''
       SELECT t.title, t.status, t.start_date, c.name AS center_name
       FROM field_tasks t
       LEFT JOIN centers c ON c.id = t.center_id
       WHERE t.id IN (SELECT task_id FROM task_staff WHERE staff_id = ?) OR t.supervisor_staff_id = ?
       ORDER BY t.start_date DESC''', [staffId, staffId]);
 
-  Future<List<Row>> courses(String staffId) => app.db.query('staff_courses',
+  Future<List<DbRow>> courses(String staffId) => app.db.query('staff_courses',
       where: 'staff_id = ?', whereArgs: [staffId], orderBy: 'obtained_at DESC');
-  Future<List<Row>> experiences(String staffId) =>
+  Future<List<DbRow>> experiences(String staffId) =>
       app.db.query('staff_experience', where: 'staff_id = ?', whereArgs: [staffId]);
 
-  Future<void> addCourse(String staffId, Row v) async {
+  Future<void> addCourse(String staffId, DbRow v) async {
     await app.db.insert('staff_courses', {...v, 'id': newId(), 'staff_id': staffId, 'updated_at': nowIso()});
     await app.audit(userId, 'media_staff', 'add_course', staffId);
   }
 
-  Future<void> addExperience(String staffId, Row v) async {
+  Future<void> addExperience(String staffId, DbRow v) async {
     await app.db.insert('staff_experience', {...v, 'id': newId(), 'staff_id': staffId, 'updated_at': nowIso()});
     await app.audit(userId, 'media_staff', 'add_experience', staffId);
   }

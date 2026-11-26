@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+import 'dart:typed_data';
 import 'package:archive/archive.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:crypto/crypto.dart' as c;
@@ -208,7 +209,7 @@ class MmyPackage {
     final encrypted = bytes.length > 5 && List.generate(5, (i) => bytes[i]).join() == _magic.join();
     if (encrypted) {
       if (passphrase == null) throw const FormatException('الملف مشفّر ويحتاج عبارة سرية');
-      bytes = await _decrypt(bytes, passphrase);
+      bytes = Uint8List.fromList(await _decrypt(bytes, passphrase));
     }
     final zip = ZipDecoder().decodeBytes(bytes);
     ArchiveFile? find(String n) {

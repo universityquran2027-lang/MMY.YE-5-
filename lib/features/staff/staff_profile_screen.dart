@@ -10,7 +10,7 @@ import 'staff_repository.dart';
 class StaffProfileScreen extends StatefulWidget {
   const StaffProfileScreen({super.key, required this.app, required this.user, required this.staffId});
   final AppDatabase app;
-  final Row user;
+  final DbRow user;
   final String staffId;
   @override
   State<StaffProfileScreen> createState() => _StaffProfileScreenState();
@@ -37,7 +37,7 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
     setState(() {});
   }
 
-  Future<void> _edit(Row p) async {
+  Future<void> _edit(DbRow p) async {
     final centers = await CentersRepository(widget.app, '').all();
     if (!mounted) return;
     final v = await showRecordForm(context,
@@ -63,11 +63,11 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
       builder: (context, snap) {
         if (snap.connectionState == ConnectionState.waiting && !snap.hasData) return const Scaffold(body: Center(child: CircularProgressIndicator()));
         if (snap.hasError) return Scaffold(body: LoadFailure(message: 'تعذر تحميل ملف الإعلامي.', onRetry: _reload));
-        final p = snap.data!['p'] as Row?;
+        final p = snap.data!['p'] as DbRow?;
         if (p == null) return const Scaffold(body: EmptyState('الملف غير موجود'));
-        final tasks = snap.data!['tasks'] as List<Row>;
-        final courses = snap.data!['courses'] as List<Row>;
-        final exp = snap.data!['exp'] as List<Row>;
+        final tasks = snap.data!['tasks'] as List<DbRow>;
+        final courses = snap.data!['courses'] as List<DbRow>;
+        final exp = snap.data!['exp'] as List<DbRow>;
         final cs = Theme.of(context).colorScheme;
         return DefaultTabController(
           length: 4,

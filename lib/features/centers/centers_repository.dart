@@ -1,14 +1,14 @@
 import 'package:sqflite/sqflite.dart';
 import '../../core/db/app_database.dart';
 
-typedef Row = Map<String, Object?>;
+typedef DbRow = Map<String, Object?>;
 
 class CentersRepository {
   CentersRepository(this.app, this.userId);
   final AppDatabase app;
   final String userId;
 
-  Future<List<Row>> list({String q = ''}) {
+  Future<List<DbRow>> list({String q = ''}) {
     final like = '%${q.trim()}%';
     return app.db.rawQuery('''
       SELECT c.*,
@@ -21,16 +21,16 @@ class CentersRepository {
       ORDER BY c.serial''', [like, like, like, like]);
   }
 
-  Future<List<Row>> all() => app.db.query('centers', orderBy: 'serial');
+  Future<List<DbRow>> all() => app.db.query('centers', orderBy: 'serial');
 
-  Future<Row?> byId(String id) async {
+  Future<DbRow?> byId(String id) async {
     final r = await app.db.query('centers', where: 'id = ?', whereArgs: [id]);
     return r.isEmpty ? null : r.first;
   }
 
   /// إضافة أو تعديل. التعديل يحدّث السجل نفسه (لا ينسخه) فتنعكس التغييرات في كل الأقسام
   /// المرتبطة بالمعرّف مع بقاء السجلات السابقة.
-  Future<String> save(Row v, {String? id}) async {
+  Future<String> save(DbRow v, {String? id}) async {
     final t = nowIso();
     if (id == null) {
       final next = (Sqflite.firstIntValue(await app.db.rawQuery('SELECT MAX(serial) FROM centers')) ?? 0) + 1;
@@ -56,14 +56,14 @@ class CentersRepository {
     return null;
   }
 
-  Future<List<Row>> staffOf(String centerId) => app.db.query('media_staff',
+  Future<List<DbRow>> staffOf(String centerId) => app.db.query('media_staff',
       where: 'center_id = ?', whereArgs: [centerId], orderBy: 'serial');
 
-  Future<List<Row>> equipmentOf(String centerId) => app.db.rawQuery('''
+  Future<List<DbRow>> equipmentOf(String centerId) => app.db.rawQuery('''
       SELECT i.name, ce.quantity, i.condition FROM center_equipment ce
       JOIN inventory_items i ON i.id = ce.item_id
       WHERE ce.center_id = ? AND ce.quantity > 0 ORDER BY i.name''', [centerId]);
 
-  Future<List<Row>> tasksOf(String centerId) => app.db.query('field_tasks',
+  Future<List<DbRow>> tasksOf(String centerId) => app.db.query('field_tasks',
       where: 'center_id = ?', whereArgs: [centerId], orderBy: 'start_date DESC');
 }
