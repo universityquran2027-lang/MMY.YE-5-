@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     tags: ['v*']
-  workflow_dispatch:
+  workflow_dispatch: # تشغيل يدوي من تبويب Actions
 
 permissions:
   contents: read
@@ -55,11 +55,14 @@ jobs:
       - run: Remove-Item -Force -ErrorAction SilentlyContinue test/widget_test.dart
         shell: pwsh
       - run: python tools/apply_native_overlay.py
-        continue-on-error: true
+        continue-on-error: true # على ويندوز تُنسخ الأيقونة فقط؛ تعديلات أندرويد غير لازمة
       - run: Copy-Item native_overlay/windows/runner/resources/app_icon.ico windows/runner/resources/app_icon.ico -Force
         shell: pwsh
       - run: flutter pub get
       - run: flutter build windows --release
+        env:
+          # مكوّن local_auth_windows يستخدم <experimental/coroutine> الذي صار خطأً في MSVC الحديث
+          CL: /D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS
       - run: Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath mmy-windows.zip
         shell: pwsh
       - uses: actions/upload-artifact@v4
@@ -67,6 +70,7 @@ jobs:
           name: mmy-windows
           path: mmy-windows.zip
 
+  # عند دفع وسم مثل v1.0.0 تُنشر الملفات في صفحة Releases تلقائياً.
   release:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: [android, windows]
