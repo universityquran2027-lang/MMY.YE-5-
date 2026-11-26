@@ -117,7 +117,9 @@ class AppDatabase {
 
   /// بيانات أساسية فقط (أنواع المخرجات والمعايير). ليست بيانات تجريبية.
   static Future<void> _seed(Database d) async {
-    final t = nowIso();
+    // معرّفات وتاريخ ثابتة للصفوف الجاهزة كي تتطابق بين الأجهزة، فلا يعدّها الاستيراد صفوفاً جديدة
+    // تتصادم مع القيد UNIQUE على الاسم.
+    const t = '2026-01-01T00:00:00Z';
     const outputs = [
       ['عدد الدروس', 'count'],
       ['عدد التطبيقات', 'count'],
@@ -125,9 +127,10 @@ class AppDatabase {
       ['تاريخ تسليم المواد', 'date'],
       ['حجم المواد', 'size_mb'],
     ];
-    for (final o in outputs) {
-      await d.insert('output_types',
-          {'id': newId(), 'name': o[0], 'data_type': o[1], 'is_builtin': 1, 'updated_at': t});
+    for (var i = 0; i < outputs.length; i++) {
+      await d.insert('output_types', {
+        'id': 'builtin-output-$i', 'name': outputs[i][0], 'data_type': outputs[i][1],
+        'is_builtin': 1, 'updated_at': t});
     }
     // الأوزان المقترحة في الوثيقة (القسم 9.6) - غير معتمدة نهائياً
     const criteria = [
@@ -145,7 +148,7 @@ class AppDatabase {
     ];
     for (var i = 0; i < criteria.length; i++) {
       await d.insert('evaluation_criteria', {
-        'id': newId(), 'axis': criteria[i][0], 'name': criteria[i][1],
+        'id': 'builtin-criterion-$i', 'axis': criteria[i][0], 'name': criteria[i][1],
         'weight': criteria[i][2], 'is_final': 0, 'sort_order': i, 'updated_at': t,
       });
     }
